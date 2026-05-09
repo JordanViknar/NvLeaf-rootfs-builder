@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
-# =============================================================================
-#  MultiROM builder — entrypoint.sh
-#  Builds an Ubuntu 22.04 + Xfce4 .mrom package ready for TWRP/MultiROM
-# =============================================================================
 set -euo pipefail
 
-# ── Install build dependencies ────────────────────────────────────────────────
+# Install build dependencies
 echo "[setup] Installing build tools…"
 apt-get update -qq
 apt-get install -y --no-install-recommends \
@@ -18,7 +14,7 @@ apt-get install -y --no-install-recommends \
     ca-certificates
 rm -rf /var/lib/apt/lists/*
 
-# ── Colour helpers ────────────────────────────────────────────────────────────
+# Colour helpers
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
 
@@ -26,11 +22,8 @@ info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 die()     { echo -e "${RED}[ERROR]${RESET} $*" >&2; exit 1; }
 
-# ── Configuration (override via environment variables) ───────────────────────
+# --------------------------- Configuration ---------------------------
 UBUNTU_SUITE="${UBUNTU_SUITE:-jammy}"
-
-# armhf = 32-bit ARM hard-float, required for Tegra K1 (zImage kernel).
-# Change to arm64 if your kernel is an Image/Image.gz (64-bit).
 TARGET_ARCH="${TARGET_ARCH:-armhf}"
 
 # archive.ubuntu.com only carries amd64 and i386.
@@ -47,9 +40,7 @@ OUTPUT_FILE="${OUTPUT_FILE:-/output/${ROM_NAME}.mrom}"
 CHROOT=/chroot
 BUILD=/build
 
-# =============================================================================
-#  STEP 0 — Validate required inputs
-# =============================================================================
+# --------------------------- STEP 0 — Validate required inputs ---------------------------
 info "Validating inputs …"
 
 [[ -f /input/manifest.txt ]] \
@@ -64,14 +55,7 @@ KERNEL_COUNT=$(find /input/root_dir/boot -maxdepth 1 -type f | wc -l)
 
 success "Input validation passed."
 
-# =============================================================================
-#  STEP 1 — Mount binfmt_misc and register qemu
-#
-#  binfmt_misc is NOT auto-mounted inside the container even with
-#  privileged: true — we have to mount it ourselves.  Once mounted,
-#  update-binfmts registers qemu-arm-static as the ELF interpreter for
-#  armhf binaries so mmdebstrap can run package post-install scripts.
-# =============================================================================
+#  --------------------------- STEP 1 — Mount binfmt_misc and register qemu ---------------------------
 info "Mounting binfmt_misc and registering qemu for ${TARGET_ARCH} …"
 
 case "${TARGET_ARCH}" in
@@ -97,9 +81,7 @@ else
     success "Native arch — no qemu needed."
 fi
 
-# =============================================================================
-#  STEP 2 — Prepare build directories
-# =============================================================================
+# --------------------------- STEP 2 — Prepare build directories ---------------------------
 mkdir -p \
     "${CHROOT}" \
     "${BUILD}/rom" \
@@ -107,14 +89,8 @@ mkdir -p \
     "${BUILD}/pre_install" \
     "${BUILD}/post_install"
 
-# =============================================================================
-#  STEP 3 — Write mmdebstrap hook scripts
-#
-#  mmdebstrap manages /proc /sys /dev bind-mounts and the qemu binary
-#  internally — no manual chroot setup needed.
-# =============================================================================
-
-# ── setup hook: runs before package installation ──────────────────────────────
+# --------------------------- STEP 3 — Write mmdebstrap hook scripts ---------------------------
+# setup hook: runs before package installation
 # Adds -updates and -security suites so Xfce and friends can be installed.
 SETUP_HOOK=$(mktemp /tmp/mmdebstrap-setup-XXXXXX.sh)
 cat > "${SETUP_HOOK}" <<HOOK
@@ -127,7 +103,7 @@ SOURCES
 HOOK
 chmod +x "${SETUP_HOOK}"
 
-# ── customize hook: runs after all packages are installed ─────────────────────
+# customize hook: runs after all packages are installed
 CUSTOMIZE_HOOK=$(mktemp /tmp/mmdebstrap-customize-XXXXXX.sh)
 cat > "${CUSTOMIZE_HOOK}" <<'HOOK'
 #!/bin/sh
@@ -144,7 +120,7 @@ chroot "$1" /bin/bash -c "
     ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
     # Enable display manager and network
-    systemctl enable lightdm       || true
+    systemctl enable lightdm || true
     systemctl enable NetworkManager || true
 
     # Default user
@@ -161,9 +137,7 @@ chroot "$1" /bin/bash -c "
 HOOK
 chmod +x "${CUSTOMIZE_HOOK}"
 
-# =============================================================================
-#  STEP 4 — Bootstrap + install everything via mmdebstrap
-# =============================================================================
+# --------------------------- STEP 4 — Bootstrap + install everything via mmdebstrap ---------------------------
 info "Running mmdebstrap for Ubuntu ${UBUNTU_SUITE} / ${TARGET_ARCH} …"
 info "Mirror: ${UBUNTU_MIRROR}"
 
@@ -190,9 +164,7 @@ rm -f "${SETUP_HOOK}" "${CUSTOMIZE_HOOK}"
 
 success "mmdebstrap complete."
 
-# =============================================================================
-#  STEP 5 — Create rom/root.tar.gz
-# =============================================================================
+# --------------------------- STEP 5 — Create rom/root.tar.gz ---------------------------
 info "Creating rom/root.tar.gz …"
 
 tar \
@@ -205,9 +177,7 @@ tar \
 
 success "root.tar.gz created: $(du -sh ${BUILD}/rom/root.tar.gz | cut -f1)"
 
-# =============================================================================
-#  STEP 6 — Stage user-provided files
-# =============================================================================
+# --------------------------- STEP 6 — Stage user-provided files ---------------------------
 info "Staging manifest, rom_info.txt, and boot files …"
 
 cp /input/manifest.txt           "${BUILD}/manifest.txt"
@@ -216,9 +186,7 @@ rsync -a /input/root_dir/boot/   "${BUILD}/root_dir/boot/"
 
 success "Files staged."
 
-# =============================================================================
-#  STEP 7 — Assemble the .mrom ZIP (store-only, no compression)
-# =============================================================================
+# --------------------------- STEP 7 — Assemble the .mrom ZIP (store-only, no compression) ---------------------------
 info "Building ${OUTPUT_FILE} …"
 
 (
