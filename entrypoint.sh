@@ -110,6 +110,17 @@ CUSTOMIZE_HOOK=$(mktemp /tmp/mmdebstrap-customize-XXXXXX.sh)
 cat > "${CUSTOMIZE_HOOK}" <<'HOOK'
 #!/bin/sh
 set -e
+
+# Apply the rootfs overlay before chroot-side customization.
+if [ -e /rootfs ] && [ ! -d /rootfs ]; then
+    echo "rootfs exists but is not a directory: /rootfs" >&2
+    exit 1
+fi
+
+if [ -d /rootfs ]; then
+    rsync -a /rootfs/ "$1/"
+fi
+
 chroot "$1" /bin/bash -c "
     set -e
     export DEBIAN_FRONTEND=noninteractive
@@ -121,9 +132,10 @@ chroot "$1" /bin/bash -c "
     update-locale LANG=en_US.UTF-8
     ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
-    # Enable display manager and network
-    systemctl enable lightdm || true
+    # Enable network
     systemctl enable NetworkManager || true
+	# Enable touchscreen service
+	systemctl enable nvleaf-touchscreen.service || true
 
     # Default user
     id ubuntu &>/dev/null || useradd -m -s /bin/bash -G sudo,video,audio,input ubuntu
