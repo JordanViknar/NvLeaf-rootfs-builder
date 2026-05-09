@@ -148,7 +148,7 @@ mmdebstrap \
     --variant=minbase \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,sudo,locales,\
+    --include="systemd,dbus,udev,accountsservice,sudo,locales,\
 xfce4,xfce4-terminal,xfce4-goodies,\
 lightdm,lightdm-gtk-greeter,\
 xorg,dbus-x11,at-spi2-core,\
