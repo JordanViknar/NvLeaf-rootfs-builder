@@ -1,0 +1,8 @@
+manifest_ver="1"
+min_mrom_ver="31"
+devices="shieldtablet"
+install_text="Ubuntu 22.04 Xfce\nPackaged for MultiROM\n"
+enable_internal="1"
+usb_dir_fs="ext4"
+usb_img_fs="vfat ntfs"
+base_folders="root:3000:4000"
