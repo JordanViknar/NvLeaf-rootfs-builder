@@ -9,6 +9,7 @@ apt-get install -y --no-install-recommends \
     qemu-user-static  \
     binfmt-support    \
     arch-test         \
+    pigz              \
     zip               \
     rsync             \
     ca-certificates
@@ -39,6 +40,7 @@ OUTPUT_FILE="${OUTPUT_FILE:-/output/${ROM_NAME}.mrom}"
 
 CHROOT=/chroot
 BUILD=/build
+COMPRESSION_THREADS="$(nproc)"
 
 # --------------------------- STEP 0 — Validate required inputs ---------------------------
 info "Validating inputs …"
@@ -171,7 +173,8 @@ tar \
     --numeric-owner \
     --preserve-permissions \
     --one-file-system \
-    -czf "${BUILD}/rom/root.tar.gz" \
+    --use-compress-program="pigz -9 -p ${COMPRESSION_THREADS}" \
+    -cf "${BUILD}/rom/root.tar.gz" \
     -C "${CHROOT}" \
     .
 

@@ -13,3 +13,7 @@ services:
       DEBIAN_FRONTEND: noninteractive
       # UBUNTU_MIRROR: http://my-cache.local:3142/ubuntu-ports
       ROM_NAME: ubuntu-22.04-xfce
+    #
+    tmpfs:
+      - /build:exec,size=4g
+      - /chroot:exec,size=4g
