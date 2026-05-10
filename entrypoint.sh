@@ -134,8 +134,9 @@ chroot "$1" /bin/bash -c "
 
     # Enable network
     systemctl enable NetworkManager || true
-	# Enable touchscreen service
+	# Enable touchscreen & UDC
 	systemctl enable nvleaf-touchscreen.service || true
+	systemctl enable nvleaf-tegra-udc.service || true
 
     # Default user
     id ubuntu &>/dev/null || useradd -m -s /bin/bash -G sudo,video,audio,input ubuntu
