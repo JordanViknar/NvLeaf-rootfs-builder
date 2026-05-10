@@ -1,0 +1,10 @@
+[Unit]
+Description=NvLeaf Tegra UDC Setup Service
+
+[Service]
+ExecStart=/opt/nvleaf/tegra-udc.sh
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

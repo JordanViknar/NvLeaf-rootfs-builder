@@ -1,0 +1,11 @@
+[Unit]
+Description=NvLeaf Touchscreen Setup Service
+After=display-manager.service
+Requires=display-manager.service
+
+[Service]
+ExecStart=/opt/nvleaf/touchscreen.sh
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

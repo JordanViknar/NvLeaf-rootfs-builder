@@ -6,6 +6,7 @@ services:
     #
     volumes:
       - ./entrypoint.sh:/entrypoint.sh:ro
+      - ./rootfs:/rootfs:ro
       - ./input:/input:ro
       - ./output:/output:rw
     #
