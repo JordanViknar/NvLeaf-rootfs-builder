@@ -107,6 +107,7 @@ set -e
 cat >> "\$1/etc/apt/sources.list" <<SOURCES
 deb ${UBUNTU_MIRROR} ${UBUNTU_SUITE}-updates main restricted universe multiverse
 deb ${UBUNTU_MIRROR} ${UBUNTU_SUITE}-security main restricted universe multiverse
+deb [trusted=yes] ${UBUNTU_MIRROR} trusty universe
 SOURCES
 HOOK
 chmod +x "${SETUP_HOOK}"
@@ -140,8 +141,11 @@ chroot "$1" /bin/bash -c "
 
     # Enable network
     systemctl enable NetworkManager || true
-	# Enable touchscreen & UDC
+	# Enable Bluetooth
+    systemctl enable bluetooth.service || true
+	# Enable NvLeaf services
 	systemctl enable nvleaf-touchscreen.service || true
+	systemctl enable nvleaf-bluetooth.service || true
 	systemctl enable nvleaf-tegra-udc.service || true
 
     # Default user
@@ -167,13 +171,14 @@ mmdebstrap \
     --variant=minbase \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,accountsservice,sudo,locales,\
+    --include="systemd,dbus,udev,accountsservice,sudo,locales,bluez,rfkill,\
 xfce4,xfce4-terminal,xfce4-goodies,\
 lightdm,lightdm-gtk-greeter,\
 xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,\
 fonts-dejavu-core,\
 network-manager,network-manager-gnome,\
 pulseaudio,pavucontrol,\
+brcm-patchram-plus-nexus7,\
 thunar,mousepad,ristretto,evince" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
     --customize-hook="${CUSTOMIZE_HOOK} \"\$1\"" \
@@ -185,8 +190,7 @@ rm -f "${SETUP_HOOK}" "${CUSTOMIZE_HOOK}"
 
 success "mmdebstrap complete."
 
-
-# --------------------------- STEP 4b — Write Wi-Fi connection profile ---------------------------
+# --------------------------- STEP 4c — Write Wi-Fi connection profile ---------------------------
 if [[ -n "${WIFI_SSID}" ]]; then
     info "Writing Wi-Fi profile for SSID: ${WIFI_SSID} …"
 
