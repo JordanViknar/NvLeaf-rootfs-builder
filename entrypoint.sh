@@ -174,7 +174,7 @@ mmdebstrap \
     --include="systemd,dbus,udev,accountsservice,sudo,locales,bluez,rfkill,\
 xfce4,xfce4-terminal,xfce4-goodies,\
 lightdm,lightdm-gtk-greeter,\
-xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,\
+xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev,\
 fonts-dejavu-core,\
 network-manager,network-manager-gnome,\
 pulseaudio,pavucontrol,\
