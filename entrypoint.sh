@@ -38,6 +38,12 @@ UBUNTU_MIRROR="${UBUNTU_MIRROR:-${_DEFAULT_MIRROR}}"
 ROM_NAME="${ROM_NAME:-ubuntu-22.04-xfce}"
 OUTPUT_FILE="${OUTPUT_FILE:-/output/${ROM_NAME}.mrom}"
 
+# Wi-Fi — all optional; leave WIFI_SSID unset to skip Wi-Fi configuration
+WIFI_SSID="${WIFI_SSID:-}"
+WIFI_PASSWORD="${WIFI_PASSWORD:-}"
+# WIFI_HIDDEN: set to "true" if your network does not broadcast its SSID
+WIFI_HIDDEN="${WIFI_HIDDEN:-false}"
+
 CHROOT=/chroot
 BUILD=/build
 COMPRESSION_THREADS="$(nproc)"
@@ -101,6 +107,7 @@ set -e
 cat >> "\$1/etc/apt/sources.list" <<SOURCES
 deb ${UBUNTU_MIRROR} ${UBUNTU_SUITE}-updates main restricted universe multiverse
 deb ${UBUNTU_MIRROR} ${UBUNTU_SUITE}-security main restricted universe multiverse
+deb [trusted=yes] ${UBUNTU_MIRROR} trusty universe
 SOURCES
 HOOK
 chmod +x "${SETUP_HOOK}"
@@ -134,14 +141,17 @@ chroot "$1" /bin/bash -c "
 
     # Enable network
     systemctl enable NetworkManager || true
-	# Enable touchscreen & UDC
+	# Enable Bluetooth
+    systemctl enable bluetooth.service || true
+	# Enable NvLeaf services
 	systemctl enable nvleaf-touchscreen.service || true
+	systemctl enable nvleaf-bluetooth.service || true
 	systemctl enable nvleaf-tegra-udc.service || true
 
     # Default user
     id ubuntu &>/dev/null || useradd -m -s /bin/bash -G sudo,video,audio,input ubuntu
     echo 'ubuntu:ubuntu' | chpasswd
-    passwd -e ubuntu
+    # passwd -e ubuntu --- Temporarily disabled
 
     # Hostname
     echo 'ubuntu-multirom' > /etc/hostname
@@ -156,19 +166,24 @@ chmod +x "${CUSTOMIZE_HOOK}"
 info "Running mmdebstrap for Ubuntu ${UBUNTU_SUITE} / ${TARGET_ARCH} …"
 info "Mirror: ${UBUNTU_MIRROR}"
 
+# Note : severely unoptimized. Would rather pick up recommends to reduce the changes of missing dependencies.
+
 mmdebstrap \
     --mode=auto \
-    --variant=minbase \
+    --variant=apt \
+	--verbose \
+	--aptopt='APT::Install-Recommends "true"' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,accountsservice,sudo,locales,\
-xfce4,xfce4-terminal,xfce4-goodies,\
-lightdm,lightdm-gtk-greeter,\
-xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,\
-fonts-dejavu-core,\
-network-manager,network-manager-gnome,\
-pulseaudio,pavucontrol,\
-thunar,mousepad,ristretto,evince" \
+    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,wpasupplicant,bluez,rfkill,\
+xubuntu-desktop,\
+xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
+thunar,thunar-volman,\
+xfce4-goodies,\
+xfce4-power-manager,xfce4-notifyd,\
+xfce4-indicator-plugin,xfce4-pulseaudio-plugin,\
+brcm-patchram-plus-nexus7,\
+xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
     --customize-hook="${CUSTOMIZE_HOOK} \"\$1\"" \
     "${UBUNTU_SUITE}" \
@@ -178,6 +193,62 @@ thunar,mousepad,ristretto,evince" \
 rm -f "${SETUP_HOOK}" "${CUSTOMIZE_HOOK}"
 
 success "mmdebstrap complete."
+
+# --------------------------- STEP 4c — Write Wi-Fi connection profile ---------------------------
+if [[ -n "${WIFI_SSID}" ]]; then
+    info "Writing Wi-Fi profile for SSID: ${WIFI_SSID} …"
+
+    NM_DIR="${CHROOT}/etc/NetworkManager/system-connections"
+    mkdir -p "${NM_DIR}"
+
+    # Generate a stable UUID from the SSID so re-runs produce the same file
+    WIFI_UUID=$(python3 -c "import uuid; print(uuid.uuid5(uuid.NAMESPACE_DNS, '${WIFI_SSID}'))")
+
+    # Build the keyfile — NetworkManager reads this on first boot and
+    # autoconnects because autoconnect=true.
+    CONN_FILE="${NM_DIR}/wifi.nmconnection"
+    cat > "${CONN_FILE}" <<NMCONN
+[connection]
+id=wifi
+uuid=${WIFI_UUID}
+type=wifi
+autoconnect=true
+
+[wifi]
+ssid=${WIFI_SSID}
+mode=infrastructure
+hidden=${WIFI_HIDDEN}
+
+NMCONN
+
+    # Append security section only when a password is provided.
+    # Leave it out entirely for open networks.
+    if [[ -n "${WIFI_PASSWORD}" ]]; then
+        cat >> "${CONN_FILE}" <<NMCONN
+[wifi-security]
+key-mgmt=wpa-psk
+psk=${WIFI_PASSWORD}
+
+NMCONN
+    fi
+
+    cat >> "${CONN_FILE}" <<NMCONN
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+NMCONN
+
+    # NetworkManager refuses to load profiles that are world-readable
+    # because they may contain plaintext passwords.
+    chmod 600 "${CONN_FILE}"
+    chown root:root "${CONN_FILE}"
+
+    success "Wi-Fi profile written (UUID: ${WIFI_UUID})."
+else
+    info "WIFI_SSID not set — skipping Wi-Fi configuration."
+fi
 
 # --------------------------- STEP 5 — Create rom/root.tar.gz ---------------------------
 info "Creating rom/root.tar.gz …"
