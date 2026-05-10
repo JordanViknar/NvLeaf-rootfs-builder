@@ -175,14 +175,13 @@ mmdebstrap \
 	--aptopt='APT::Install-Recommends "true"' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,bluez,rfkill,\
+    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,wpasupplicant,bluez,rfkill,\
 xubuntu-desktop,\
 xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
 thunar,thunar-volman,\
 xfce4-goodies,\
 xfce4-power-manager,xfce4-notifyd,\
 xfce4-indicator-plugin,xfce4-pulseaudio-plugin,\
-network-manager-gnome,\
 brcm-patchram-plus-nexus7,\
 xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
