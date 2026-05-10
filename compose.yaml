@@ -1,21 +1,29 @@
 services:
+  apt-cacher:
+    image: sameersbn/apt-cacher-ng:latest
+    restart: unless-stopped
+    volumes:
+      - ./apt-cache:/var/cache/apt-cacher-ng
+
   builder:
     image: ubuntu:22.04
     privileged: true
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    depends_on:
+      - apt-cacher
+    #
+    env_file: .env
+    environment:
+      DEBIAN_FRONTEND: noninteractive
+      ROM_NAME: ubuntu-22.04-xfce
+      http_proxy: "http://apt-cacher:3142"
+      https_proxy: "http://apt-cacher:3142"
     #
     volumes:
       - ./entrypoint.sh:/entrypoint.sh:ro
       - ./rootfs:/rootfs:ro
       - ./input:/input:ro
       - ./output:/output:rw
-    #
-    env_file: .env
-    environment:
-      DEBIAN_FRONTEND: noninteractive
-      # UBUNTU_MIRROR: http://my-cache.local:3142/ubuntu-ports
-      ROM_NAME: ubuntu-22.04-xfce
-    #
     tmpfs:
       - /build:exec,size=4g
       - /chroot:exec,size=4g
