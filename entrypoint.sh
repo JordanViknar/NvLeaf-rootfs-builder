@@ -38,6 +38,12 @@ UBUNTU_MIRROR="${UBUNTU_MIRROR:-${_DEFAULT_MIRROR}}"
 ROM_NAME="${ROM_NAME:-ubuntu-22.04-xfce}"
 OUTPUT_FILE="${OUTPUT_FILE:-/output/${ROM_NAME}.mrom}"
 
+# Wi-Fi — all optional; leave WIFI_SSID unset to skip Wi-Fi configuration
+WIFI_SSID="${WIFI_SSID:-}"
+WIFI_PASSWORD="${WIFI_PASSWORD:-}"
+# WIFI_HIDDEN: set to "true" if your network does not broadcast its SSID
+WIFI_HIDDEN="${WIFI_HIDDEN:-false}"
+
 CHROOT=/chroot
 BUILD=/build
 COMPRESSION_THREADS="$(nproc)"
@@ -178,6 +184,63 @@ thunar,mousepad,ristretto,evince" \
 rm -f "${SETUP_HOOK}" "${CUSTOMIZE_HOOK}"
 
 success "mmdebstrap complete."
+
+
+# --------------------------- STEP 4b — Write Wi-Fi connection profile ---------------------------
+if [[ -n "${WIFI_SSID}" ]]; then
+    info "Writing Wi-Fi profile for SSID: ${WIFI_SSID} …"
+
+    NM_DIR="${CHROOT}/etc/NetworkManager/system-connections"
+    mkdir -p "${NM_DIR}"
+
+    # Generate a stable UUID from the SSID so re-runs produce the same file
+    WIFI_UUID=$(python3 -c "import uuid; print(uuid.uuid5(uuid.NAMESPACE_DNS, '${WIFI_SSID}'))")
+
+    # Build the keyfile — NetworkManager reads this on first boot and
+    # autoconnects because autoconnect=true.
+    CONN_FILE="${NM_DIR}/wifi.nmconnection"
+    cat > "${CONN_FILE}" <<NMCONN
+[connection]
+id=wifi
+uuid=${WIFI_UUID}
+type=wifi
+autoconnect=true
+
+[wifi]
+ssid=${WIFI_SSID}
+mode=infrastructure
+hidden=${WIFI_HIDDEN}
+
+NMCONN
+
+    # Append security section only when a password is provided.
+    # Leave it out entirely for open networks.
+    if [[ -n "${WIFI_PASSWORD}" ]]; then
+        cat >> "${CONN_FILE}" <<NMCONN
+[wifi-security]
+key-mgmt=wpa-psk
+psk=${WIFI_PASSWORD}
+
+NMCONN
+    fi
+
+    cat >> "${CONN_FILE}" <<NMCONN
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+NMCONN
+
+    # NetworkManager refuses to load profiles that are world-readable
+    # because they may contain plaintext passwords.
+    chmod 600 "${CONN_FILE}"
+    chown root:root "${CONN_FILE}"
+
+    success "Wi-Fi profile written (UUID: ${WIFI_UUID})."
+else
+    info "WIFI_SSID not set — skipping Wi-Fi configuration."
+fi
 
 # --------------------------- STEP 5 — Create rom/root.tar.gz ---------------------------
 info "Creating rom/root.tar.gz …"

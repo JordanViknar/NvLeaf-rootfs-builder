@@ -10,6 +10,7 @@ services:
       - ./input:/input:ro
       - ./output:/output:rw
     #
+    env_file: .env
     environment:
       DEBIAN_FRONTEND: noninteractive
       # UBUNTU_MIRROR: http://my-cache.local:3142/ubuntu-ports
