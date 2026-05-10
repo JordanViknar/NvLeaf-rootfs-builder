@@ -151,7 +151,7 @@ chroot "$1" /bin/bash -c "
     # Default user
     id ubuntu &>/dev/null || useradd -m -s /bin/bash -G sudo,video,audio,input ubuntu
     echo 'ubuntu:ubuntu' | chpasswd
-    passwd -e ubuntu
+    # passwd -e ubuntu --- Temporarily disabled
 
     # Hostname
     echo 'ubuntu-multirom' > /etc/hostname
@@ -171,15 +171,16 @@ mmdebstrap \
     --variant=minbase \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,accountsservice,sudo,locales,bluez,rfkill,\
-xfce4,xfce4-terminal,xfce4-goodies,\
-lightdm,lightdm-gtk-greeter,\
-xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev,\
-fonts-dejavu-core,\
-network-manager,network-manager-gnome,\
-pulseaudio,pavucontrol,\
+    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,bluez,rfkill,\
+xubuntu-desktop,\
+xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
+thunar,thunar-volman,\
+xfce4-goodies,\
+xfce4-power-manager,xfce4-notifyd,\
+xfce4-indicator-plugin,xfce4-pulseaudio-plugin,\
+network-manager-gnome,\
 brcm-patchram-plus-nexus7,\
-thunar,mousepad,ristretto,evince" \
+xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
     --customize-hook="${CUSTOMIZE_HOOK} \"\$1\"" \
     "${UBUNTU_SUITE}" \
