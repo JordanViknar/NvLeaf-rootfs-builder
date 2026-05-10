@@ -166,9 +166,13 @@ chmod +x "${CUSTOMIZE_HOOK}"
 info "Running mmdebstrap for Ubuntu ${UBUNTU_SUITE} / ${TARGET_ARCH} …"
 info "Mirror: ${UBUNTU_MIRROR}"
 
+# Note : severely unoptimized. Would rather pick up recommends to reduce the changes of missing dependencies.
+
 mmdebstrap \
     --mode=auto \
-    --variant=minbase \
+    --variant=apt \
+	--verbose \
+	--aptopt='APT::Install-Recommends "true"' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
     --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,bluez,rfkill,\
