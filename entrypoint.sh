@@ -159,7 +159,7 @@ mmdebstrap \
 	--aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,wpasupplicant,bluez,rfkill,\
+    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,wpasupplicant,bluez,rfkill,openssh-server,\
 xubuntu-desktop,\
 xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
 thunar,thunar-volman,\
