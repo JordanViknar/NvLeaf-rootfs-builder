@@ -21,6 +21,8 @@ case "${TARGET_ARCH}" in
 esac
 UBUNTU_MIRROR="${UBUNTU_MIRROR:-${_DEFAULT_MIRROR}}"
 
+export UBUNTU_SUITE TARGET_ARCH
+
 ROM_NAME="${ROM_NAME:-ubuntu-22.04-xfce}"
 OUTPUT_FILE="${OUTPUT_FILE:-/output/${ROM_NAME}.mrom}"
 
@@ -43,6 +45,8 @@ apt-get install -y --no-install-recommends \
     binfmt-support    \
     arch-test         \
     pigz              \
+    gnupg             \
+    wget              \
     zip               \
     rsync             \
     ca-certificates
@@ -114,10 +118,37 @@ if [ -d /rootfs ]; then
     rsync -a /rootfs/ "$1/"
 fi
 
+mkdir -p "$1/etc/apt/sources.list.d" "$1/etc/apt/preferences.d" "$1/usr/share/keyrings"
+wget -qO- "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x738BEB9321D1AAEC13EA9391AEBDF4819BE21867" \
+    | gpg --batch --yes --dearmor -o "$1/usr/share/keyrings/mozillateam-ppa.gpg"
+chmod 0644 "$1/usr/share/keyrings/mozillateam-ppa.gpg"
+
+cat > "$1/etc/apt/sources.list.d/mozillateam-ppa.list" <<PPA
+deb [signed-by=/usr/share/keyrings/mozillateam-ppa.gpg] http://ppa.launchpad.net/mozillateam/ppa/ubuntu ${UBUNTU_SUITE} main
+PPA
+
+cat > "$1/etc/apt/preferences.d/mozillateam-firefox" <<'PREF'
+Package: firefox*
+Pin: release o=LP-PPA-mozillateam
+Pin-Priority: 1001
+PREF
+
 chroot "$1" /bin/bash -c "
     set -e
     export DEBIAN_FRONTEND=noninteractive
     export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    export http_proxy=http://apt-cacher:3142
+    export https_proxy=http://apt-cacher:3142
+
+    # Install Firefox separately to avoid snapd
+    apt-get update
+    if ! apt-cache policy firefox | grep -Fq 'http://ppa.launchpad.net/mozillateam/ppa/ubuntu'; then
+        echo 'Mozilla Team PPA does not publish firefox for ${TARGET_ARCH} on ${UBUNTU_SUITE}.' >&2
+        exit 1
+    fi
+    apt-get install -y --no-install-recommends firefox
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
 
     # Locale + timezone
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
