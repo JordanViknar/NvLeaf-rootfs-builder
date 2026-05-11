@@ -163,7 +163,7 @@ mmdebstrap \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
     --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,\
-network-manager,wpasupplicant,bluez,rfkill,\
+network-manager,wpasupplicant,bluez,rfkill,pulseaudio,\
 openssh-server,nano,htop,\
 xubuntu-desktop,\
 xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
