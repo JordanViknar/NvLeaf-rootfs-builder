@@ -154,7 +154,6 @@ mmdebstrap \
     --mode=auto \
     --variant=apt \
     --verbose \
-    --aptopt='APT::Install-Recommends "true"' \
     --aptopt='Acquire::http::Proxy "http://apt-cacher:3142";' \
 	--aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
     --architectures="${TARGET_ARCH}" \
