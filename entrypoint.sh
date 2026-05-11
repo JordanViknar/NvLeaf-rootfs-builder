@@ -45,8 +45,6 @@ apt-get install -y --no-install-recommends \
     binfmt-support    \
     arch-test         \
     pigz              \
-    gnupg             \
-    wget              \
     zip               \
     rsync             \
     ca-certificates
@@ -118,15 +116,7 @@ if [ -d /rootfs ]; then
     rsync -a /rootfs/ "$1/"
 fi
 
-mkdir -p "$1/etc/apt/sources.list.d" "$1/etc/apt/preferences.d" "$1/usr/share/keyrings"
-wget -qO- "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x738BEB9321D1AAEC13EA9391AEBDF4819BE21867" \
-    | gpg --batch --yes --dearmor -o "$1/usr/share/keyrings/mozillateam-ppa.gpg"
-chmod 0644 "$1/usr/share/keyrings/mozillateam-ppa.gpg"
-
-cat > "$1/etc/apt/sources.list.d/mozillateam-ppa.list" <<PPA
-deb [signed-by=/usr/share/keyrings/mozillateam-ppa.gpg] http://ppa.launchpad.net/mozillateam/ppa/ubuntu ${UBUNTU_SUITE} main
-PPA
-
+mkdir -p "$1/etc/apt/preferences.d"
 cat > "$1/etc/apt/preferences.d/mozillateam-firefox" <<'PREF'
 Package: firefox*
 Pin: release o=LP-PPA-mozillateam
@@ -140,12 +130,7 @@ chroot "$1" /bin/bash -c "
     export http_proxy=http://apt-cacher:3142
     export https_proxy=http://apt-cacher:3142
 
-    # Install Firefox separately to avoid snapd
-    apt-get update
-    if ! apt-cache policy firefox | grep -Fq 'http://ppa.launchpad.net/mozillateam/ppa/ubuntu'; then
-        echo 'Mozilla Team PPA does not publish firefox for ${TARGET_ARCH} on ${UBUNTU_SUITE}.' >&2
-        exit 1
-    fi
+    add-apt-repository -y ppa:mozillateam/ppa
     apt-get install -y --no-install-recommends firefox
     apt-get clean
     rm -rf /var/lib/apt/lists/*
@@ -193,7 +178,7 @@ mmdebstrap \
     --aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,\
+    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,gpg-agent,software-properties-common,\
 network-manager,wpasupplicant,bluez,rfkill,pulseaudio,\
 openssh-server,nano,htop,\
 xubuntu-desktop,\
@@ -201,7 +186,7 @@ xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
 thunar,thunar-volman,pavucontrol,onboard,network-manager-gnome,\
 xfce4-goodies,\
 xfce4-power-manager,xfce4-notifyd,\
-xfce4-indicator-plugin,xfce4-pulseaudio-plugin,network-manager-gnome,xfce4-statusnotifier-plugin,ayatana-indicator-power,blueman,\
+xfce4-indicator-plugin,xfce4-pulseaudio-plugin,network-manager-gnome,xfce4-statusnotifier-plugin,xfce4-power-manager-plugins,blueman,\
 brcm-patchram-plus-nexus7,\
 xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
