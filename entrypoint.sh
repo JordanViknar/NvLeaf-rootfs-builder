@@ -127,7 +127,7 @@ chroot "$1" /bin/bash -c "
 
     # Enable network
     systemctl enable NetworkManager || true
-	# Enable Bluetooth
+    # Enable Bluetooth
     systemctl enable bluetooth.service || true
     # Enable NvLeaf services
     systemctl enable nvleaf-touchscreen.service || true
@@ -142,6 +142,9 @@ chroot "$1" /bin/bash -c "
     # Hostname
     echo 'ubuntu-multirom' > /etc/hostname
     printf '127.0.0.1\tlocalhost\n127.0.1.1\tubuntu-multirom\n' > /etc/hosts
+
+    # Remove mmdebstrap's config so it doesn't end up in the final image and cause confusion.
+    rm -f /etc/apt/apt.conf.d/99mmdebstrap
 "
 HOOK
 chmod +x "${CUSTOMIZE_HOOK}"
@@ -154,17 +157,20 @@ mmdebstrap \
     --mode=auto \
     --variant=apt \
     --verbose \
+    --aptopt='APT::Install-Recommends "false"' \
     --aptopt='Acquire::http::Proxy "http://apt-cacher:3142";' \
-	--aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
+    --aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,wpasupplicant,bluez,rfkill,openssh-server,\
+    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,\
+network-manager,wpasupplicant,bluez,rfkill,\
+openssh-server,nano,htop,\
 xubuntu-desktop,\
 xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
-thunar,thunar-volman,\
+thunar,thunar-volman,pavucontrol,onboard,network-manager-gnome,\
 xfce4-goodies,\
 xfce4-power-manager,xfce4-notifyd,\
-xfce4-indicator-plugin,xfce4-pulseaudio-plugin,\
+xfce4-indicator-plugin,xfce4-pulseaudio-plugin,network-manager-gnome,xfce4-statusnotifier-plugin,ayatana-indicator-power,blueman,\
 brcm-patchram-plus-nexus7,\
 xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
