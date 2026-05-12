@@ -178,17 +178,49 @@ mmdebstrap \
     --aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,gpg-agent,software-properties-common,\
-network-manager,wpasupplicant,bluez,rfkill,pulseaudio,\
-openssh-server,nano,htop,\
-xubuntu-desktop,\
-xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
-thunar,thunar-volman,pavucontrol,onboard,network-manager-gnome,\
-xfce4-goodies,\
-xfce4-power-manager,xfce4-notifyd,\
-xfce4-indicator-plugin,xfce4-pulseaudio-plugin,network-manager-gnome,xfce4-statusnotifier-plugin,xfce4-power-manager-plugins,blueman,\
+	--include="\
+accountsservice,\
+at-spi2-core,\
+bluez,\
+blueman,\
 brcm-patchram-plus-nexus7,\
-xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev" \
+dbus,\
+dbus-x11,\
+gpg-agent,\
+htop,\
+locales,\
+nano,\
+network-manager,\
+network-manager-gnome,\
+onboard,\
+openssh-server,\
+pavucontrol,\
+pulseaudio,\
+rfkill,\
+software-properties-common,\
+sudo,\
+systemd,\
+thunar,\
+thunar-volman,\
+udev,\
+upower,\
+wpasupplicant,\
+xfce4-goodies,\
+xfce4-indicator-plugin,\
+xfce4-notifyd,\
+xfce4-panel,\
+xfce4-power-manager,\
+xfce4-power-manager-plugins,\
+xfce4-pulseaudio-plugin,\
+xfce4-session,\
+xfce4-settings,\
+xfce4-statusnotifier-plugin,\
+xfdesktop4,\
+xfwm4,\
+xorg,\
+xserver-xorg-input-evdev,\
+xserver-xorg-video-fbdev,\
+xubuntu-desktop" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
     --customize-hook="${CUSTOMIZE_HOOK} \"\$1\"" \
     "${UBUNTU_SUITE}" \
