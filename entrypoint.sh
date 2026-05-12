@@ -21,6 +21,8 @@ case "${TARGET_ARCH}" in
 esac
 UBUNTU_MIRROR="${UBUNTU_MIRROR:-${_DEFAULT_MIRROR}}"
 
+export UBUNTU_SUITE TARGET_ARCH
+
 ROM_NAME="${ROM_NAME:-ubuntu-22.04-xfce}"
 OUTPUT_FILE="${OUTPUT_FILE:-/output/${ROM_NAME}.mrom}"
 
@@ -114,10 +116,24 @@ if [ -d /rootfs ]; then
     rsync -a /rootfs/ "$1/"
 fi
 
+mkdir -p "$1/etc/apt/preferences.d"
+cat > "$1/etc/apt/preferences.d/mozillateam-firefox" <<'PREF'
+Package: firefox*
+Pin: release o=LP-PPA-mozillateam
+Pin-Priority: 1001
+PREF
+
 chroot "$1" /bin/bash -c "
     set -e
     export DEBIAN_FRONTEND=noninteractive
     export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    export http_proxy=http://apt-cacher:3142
+    export https_proxy=http://apt-cacher:3142
+
+    add-apt-repository -y ppa:mozillateam/ppa
+    apt-get install -y --no-install-recommends firefox
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
 
     # Locale + timezone
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
@@ -127,7 +143,7 @@ chroot "$1" /bin/bash -c "
 
     # Enable network
     systemctl enable NetworkManager || true
-	# Enable Bluetooth
+    # Enable Bluetooth
     systemctl enable bluetooth.service || true
     # Enable NvLeaf services
     systemctl enable nvleaf-touchscreen.service || true
@@ -142,6 +158,9 @@ chroot "$1" /bin/bash -c "
     # Hostname
     echo 'ubuntu-multirom' > /etc/hostname
     printf '127.0.0.1\tlocalhost\n127.0.1.1\tubuntu-multirom\n' > /etc/hosts
+
+    # Remove mmdebstrap's config so it doesn't end up in the final image and cause confusion.
+    rm -f /etc/apt/apt.conf.d/99mmdebstrap
 "
 HOOK
 chmod +x "${CUSTOMIZE_HOOK}"
@@ -154,18 +173,20 @@ mmdebstrap \
     --mode=auto \
     --variant=apt \
     --verbose \
-    --aptopt='APT::Install-Recommends "true"' \
+    --aptopt='APT::Install-Recommends "false"' \
     --aptopt='Acquire::http::Proxy "http://apt-cacher:3142";' \
-	--aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
+    --aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
     --architectures="${TARGET_ARCH}" \
     --components="main,restricted,universe,multiverse" \
-    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,network-manager,wpasupplicant,bluez,rfkill,openssh-server,\
+    --include="systemd,dbus,udev,upower,accountsservice,sudo,locales,gpg-agent,software-properties-common,\
+network-manager,wpasupplicant,bluez,rfkill,pulseaudio,\
+openssh-server,nano,htop,\
 xubuntu-desktop,\
 xfce4-panel,xfce4-session,xfce4-settings,xfwm4,xfdesktop4,\
-thunar,thunar-volman,\
+thunar,thunar-volman,pavucontrol,onboard,network-manager-gnome,\
 xfce4-goodies,\
 xfce4-power-manager,xfce4-notifyd,\
-xfce4-indicator-plugin,xfce4-pulseaudio-plugin,\
+xfce4-indicator-plugin,xfce4-pulseaudio-plugin,network-manager-gnome,xfce4-statusnotifier-plugin,xfce4-power-manager-plugins,blueman,\
 brcm-patchram-plus-nexus7,\
 xorg,dbus-x11,at-spi2-core,xserver-xorg-video-fbdev,xserver-xorg-input-evdev" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
