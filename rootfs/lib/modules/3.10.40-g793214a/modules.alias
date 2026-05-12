@@ -1,0 +1,12 @@
+# Aliases extracted from modules themselves.
+alias of:N*T*Candroid,bcmdhd_wlan* bcmdhd
+alias sdio:c00v*d* bcmdhd
+alias sdio:c*v02D0dA8E7* bcmdhd
+alias sdio:c*v02D0d4324* bcmdhd
+alias sdio:c*v02D0d4334* bcmdhd
+alias sdio:c*v02D0d4330* bcmdhd
+alias sdio:c*v02D0d4319* bcmdhd
+alias sdio:c*v02D0d4329* bcmdhd
+alias sdio:c*v02D0d0493* bcmdhd
+alias sdio:c*v02D0d0492* bcmdhd
+alias sdio:c*v02D0d0000* bcmdhd

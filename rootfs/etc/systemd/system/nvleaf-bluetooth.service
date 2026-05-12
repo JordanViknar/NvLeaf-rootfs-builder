@@ -1,0 +1,12 @@
+[Unit]
+Description=NvLeaf Bluetooth Setup Service
+Before=bluetooth.service
+RequiredBy=bluetooth.service
+RequiresMountsFor=/system
+
+[Service]
+ExecStart=/opt/nvleaf/bluetooth.sh
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

@@ -1,55 +1,29 @@
-version: "3.9"
-
-# =============================================================================
-#  MultiROM Builder — docker-compose.yml
-#
-#  Usage:
-#    1. Place your files under input/ (see README or the templates)
-#    2. docker compose run --rm builder
-#    3. Your .mrom file appears in output/
-#
-#  No custom image / Dockerfile needed — runs straight from ubuntu:22.04.
-# =============================================================================
-
 services:
+  apt-cacher:
+    image: sameersbn/apt-cacher-ng:latest
+    restart: unless-stopped
+    volumes:
+      - ./apt-cache:/var/cache/apt-cacher-ng
+
   builder:
     image: ubuntu:22.04
-
-    # ── Runtime settings ─────────────────────────────────────────────────────
-    # privileged is required for cross-arch building: mmdebstrap needs
-    # CAP_SYS_ADMIN to mount binfmt_misc so qemu-arm-static is invoked
-    # automatically for armhf ELF binaries during package installation.
     privileged: true
-
-    # entrypoint.sh is mounted read-only and executed directly
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
-
-    # ── Volume mounts ─────────────────────────────────────────────────────────
-    # entrypoint.sh → the build script (read-only)
-    # input/        → your kernel, initramfs, manifest.txt, rom_info.txt (read-only)
-    # output/       → the finished .mrom file lands here (read-write)
-    volumes:
-      - ./entrypoint.sh:/entrypoint.sh:ro
-      - ./input:/input:ro
-      - ./output:/output:rw
-
-    # ── Environment knobs ────────────────────────────────────────────────────
+    depends_on:
+      - apt-cacher
+    #
+    env_file: .env
     environment:
       DEBIAN_FRONTEND: noninteractive
-
-      # Ubuntu release codename (jammy = 22.04)
-      UBUNTU_SUITE: jammy
-
-      # Mirror is auto-selected by the script based on TARGET_ARCH:
-      #   amd64/i386  → archive.ubuntu.com
-      #   armhf/arm64 → ports.ubuntu.com  (set automatically, don't override here)
-      # Uncomment to force a specific mirror, e.g. a local apt-cacher-ng:
-      # UBUNTU_MIRROR: http://my-cache.local:3142/ubuntu-ports
-
-      # Output filename (without the path — always goes into /output/)
       ROM_NAME: ubuntu-22.04-xfce
-
-    # ── Resource limits (optional — tweak for your machine) ──────────────────
-    # The rootfs build can spike to ~2 GB RAM during package installation.
-    # mem_limit: 4g
-    # cpus: "4"
+      http_proxy: "http://apt-cacher:3142"
+      https_proxy: "http://apt-cacher:3142"
+    #
+    volumes:
+      - ./entrypoint.sh:/entrypoint.sh:ro
+      - ./rootfs:/rootfs:ro
+      - ./input:/input:ro
+      - ./output:/output:rw
+    tmpfs:
+      - /build:exec,size=4g
+      - /chroot:exec,size=4g

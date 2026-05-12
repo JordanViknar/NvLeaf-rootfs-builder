@@ -1,0 +1,2 @@
+/android/system	/system		none	bind							0	0
+tmpfs			/tmp		tmpfs	defaults,nosuid,nodev,mode=1777	0	0
