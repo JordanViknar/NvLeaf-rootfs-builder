@@ -11,17 +11,9 @@ die()     { echo -e "${RED}[ERROR]${RESET} $*" >&2; exit 1; }
 
 # --------------------------- Configuration ---------------------------
 UBUNTU_SUITE="${UBUNTU_SUITE:-jammy}"
-TARGET_ARCH="${TARGET_ARCH:-armhf}"
+UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://ports.ubuntu.com/ubuntu-ports}"
 
-# archive.ubuntu.com only carries amd64 and i386.
-# All other architectures (armhf, arm64, etc.) live on ports.ubuntu.com.
-case "${TARGET_ARCH}" in
-    amd64|i386) _DEFAULT_MIRROR="http://archive.ubuntu.com/ubuntu" ;;
-    *)          _DEFAULT_MIRROR="http://ports.ubuntu.com/ubuntu-ports" ;;
-esac
-UBUNTU_MIRROR="${UBUNTU_MIRROR:-${_DEFAULT_MIRROR}}"
-
-export UBUNTU_SUITE TARGET_ARCH
+export UBUNTU_SUITE
 
 ROM_NAME="${ROM_NAME:-ubuntu-22.04-xfce}"
 OUTPUT_FILE="${OUTPUT_FILE:-/output/${ROM_NAME}.mrom}"
@@ -60,16 +52,11 @@ KERNEL_COUNT=$(find /input/root_dir/boot -maxdepth 1 -type f | wc -l)
 success "Input validation passed."
 
 #  --------------------------- Mount binfmt_misc and register qemu ---------------------------
-info "Mounting binfmt_misc and registering qemu for ${TARGET_ARCH} …"
-
-case "${TARGET_ARCH}" in
-    armhf|armel) QEMU_BIN=/usr/bin/qemu-arm-static ;;
-    arm64)       QEMU_BIN=/usr/bin/qemu-aarch64-static ;;
-    *)           QEMU_BIN="" ;;
-esac
+info "Mounting binfmt_misc and registering qemu for armhf …"
+QEMU_BIN=/usr/bin/qemu-arm-static
 
 if [[ -n "${QEMU_BIN}" ]]; then
-    [[ -f "${QEMU_BIN}" ]] || die "${QEMU_BIN} not found — qemu-user-static may not support ${TARGET_ARCH}."
+    [[ -f "${QEMU_BIN}" ]] || die "${QEMU_BIN} not found."
     if ! mountpoint -q /proc/sys/fs/binfmt_misc 2>/dev/null; then
         mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc
     fi
@@ -166,7 +153,7 @@ HOOK
 chmod +x "${CUSTOMIZE_HOOK}"
 
 # --------------------------- Bootstrap via mmdebstrap ---------------------------
-info "Running mmdebstrap for Ubuntu ${UBUNTU_SUITE} / ${TARGET_ARCH} …"
+info "Running mmdebstrap for Ubuntu ${UBUNTU_SUITE} / armhf …"
 info "Mirror: ${UBUNTU_MIRROR}"
 
 mmdebstrap \
@@ -176,7 +163,7 @@ mmdebstrap \
     --aptopt='APT::Install-Recommends "false"' \
     --aptopt='Acquire::http::Proxy "http://apt-cacher:3142";' \
     --aptopt='Acquire::https::Proxy "http://apt-cacher:3142";' \
-    --architectures="${TARGET_ARCH}" \
+    --architectures="armhf" \
     --components="main,restricted,universe,multiverse" \
 	--include="\
 accountsservice,\

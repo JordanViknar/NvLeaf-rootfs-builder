@@ -8,7 +8,6 @@ on:
 
 env:
   UBUNTU_SUITE: jammy
-  TARGET_ARCH: armhf
   ROM_NAME: ubuntu-22.04-xfce
   WIFI_SSID: ""
   WIFI_PASSWORD: ""
@@ -27,9 +26,9 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ./apt-cache
-          key: apt-${{ env.UBUNTU_SUITE }}-${{ env.TARGET_ARCH }}-${{ hashFiles('entrypoint.sh') }}
+          key: apt-${{ env.UBUNTU_SUITE }}-armhf-${{ hashFiles('entrypoint.sh') }}
           restore-keys: |
-            apt-${{ env.UBUNTU_SUITE }}-${{ env.TARGET_ARCH }}-
+            apt-${{ env.UBUNTU_SUITE }}-armhf-
 
       - name: Create apt-cache directory
         run: mkdir -p ./apt-cache
@@ -39,7 +38,6 @@ jobs:
           cat <<- EOF > .env
           UBUNTU_MIRROR=http://ports.ubuntu.com/ubuntu-ports
           UBUNTU_SUITE=${UBUNTU_SUITE}
-          TARGET_ARCH=${TARGET_ARCH}
           ROM_NAME=${ROM_NAME}
           WIFI_SSID=${WIFI_SSID}
           WIFI_PASSWORD=${WIFI_PASSWORD}
