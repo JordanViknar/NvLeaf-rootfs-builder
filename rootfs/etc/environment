@@ -1,0 +1,4 @@
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+GDK_SCALE=2
+QT_AUTO_SCREEN_SET_FACTOR=0
+QT_SCALE_FACTOR=2
