@@ -207,7 +207,8 @@ xfwm4,\
 xorg,\
 xserver-xorg-input-evdev,\
 xserver-xorg-video-fbdev,\
-xubuntu-desktop" \
+xubuntu-desktop,
+zram-config" \
     --setup-hook="${SETUP_HOOK} \"\$1\"" \
     --customize-hook="${CUSTOMIZE_HOOK} \"\$1\"" \
     "${UBUNTU_SUITE}" \
