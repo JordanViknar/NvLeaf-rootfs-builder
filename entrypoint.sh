@@ -128,13 +128,9 @@ chroot "$1" /bin/bash -c "
     update-locale LANG=en_US.UTF-8
     ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
-    # Enable network
-    systemctl enable NetworkManager || true
-    # Enable Bluetooth
-    systemctl enable bluetooth.service || true
     # Enable NvLeaf services
     systemctl enable nvleaf-touchscreen.service || true
-    systemctl enable nvleaf-bluetooth.service || true
+    systemctl enable nvleaf-wifibt.service || true
     systemctl enable nvleaf-tegra-udc.service || true
 
     # Default user

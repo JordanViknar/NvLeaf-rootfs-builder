@@ -1,0 +1,12 @@
+[Unit]
+Description=NvLeaf Wi-Fi & Bluetooth Setup Service
+Before=bluetooth.service NetworkManager.service
+RequiredBy=bluetooth.service NetworkManager.service
+RequiresMountsFor=/system
+
+[Service]
+ExecStart=/opt/nvleaf/wifibt.sh
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
